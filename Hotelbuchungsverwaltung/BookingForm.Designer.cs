@@ -42,6 +42,7 @@ namespace Hotelbuchungsverwaltung
             this.telTextbox = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.anzahlTextbox = new System.Windows.Forms.TextBox();
+            this.anzahlTextbox.Text = "2";
             this.label6 = new System.Windows.Forms.Label();
             this.NfruestueckTextbox = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();

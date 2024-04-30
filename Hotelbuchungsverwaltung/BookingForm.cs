@@ -1,11 +1,13 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using MySql.Data.MySqlClient;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -22,7 +24,7 @@ namespace Hotelbuchungsverwaltung
             InitializeComponent();
         }
 
-   
+
 
         private void BookingForm_Load(object sender, EventArgs e)
         {
@@ -41,7 +43,7 @@ namespace Hotelbuchungsverwaltung
 
 
         double zimmerPreis = 0;
-        int nPerson = 1;
+        int nPerson = 2;
         int nFruestueck = 0;
         int nNacht = 1;
         int fruestueckPreis = 14;
@@ -54,23 +56,10 @@ namespace Hotelbuchungsverwaltung
             }
             else
             {
-                nPerson = 1;
+                nPerson = 2;
             }
 
-            zimmerCombobox.Items.Clear();
-            string query = "SELECT ZimmerNummer FROM zimmer WHERE zimmerTyp >=@AnzahlPerson" ; //nur passende Zimmer fuer Gaesteanzahl zeigen
-            MySqlParameter[] parameters = {
-    new MySqlParameter("@AnzahlPerson", nPerson) };
-            DataTable table = dataConnection.LoadFromSQL(query,parameters);
-
-
-            if (table != null)
-            {
-                foreach (DataRow row in table.Rows)
-                {
-                    zimmerCombobox.Items.Add(row["ZimmerNummer"].ToString());
-                }
-            }
+            CheckZimmerVerfuegbarkeit();
         }
         private void NfruestueckTextbox_TextChanged(object sender, EventArgs e)
         {
@@ -86,11 +75,13 @@ namespace Hotelbuchungsverwaltung
         }
         private void zimmerCombobox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            //bei Auswahl des Zimmers wird preis neu berechnet 
+
             string query = "SELECT Preis FROM zimmer WHERE ZimmerNummer=@zimmerNummer";
             MySqlParameter[] parameters = {
     new MySqlParameter("@zimmerNummer", zimmerCombobox.Text)
 };
-            DataTable table = dataConnection.LoadFromSQL(query,parameters);
+            DataTable table = dataConnection.LoadFromSQL(query, parameters);
             if (table != null && table.Rows.Count > 0)
             {
                 object zimmerPreisObject = table.Rows[0]["Preis"];
@@ -107,44 +98,85 @@ namespace Hotelbuchungsverwaltung
             CalculatePreis();
 
         }
+        private void CheckZimmerVerfuegbarkeit()
+        {//nur verfuegbare zimmer wird auf der Zimmerliste gezeigt.
+            //es wird mit dem Datum und nPerson uberpreft werden
+            zimmerCombobox.Items.Clear();
+
+            //verfuegbarkeit nach Datum
+            DateTime checkin = checkinDatetimepicker.Value.Date;
+            DateTime checkout = checkoutDatetimepicker.Value.Date;
+
+            string query = "SELECT DISTINCT ZimmerID FROM reservierungen WHERE CheckOutDatum > @checkIn AND CheckInDatum<@checkout";
+            MySqlParameter[] parameters = {
+    new MySqlParameter("@checkIn", checkin),
+    new MySqlParameter("@checkout", checkout),
+};
+            DataTable table = dataConnection.LoadFromSQL(query, parameters);
+
+            if (table != null)
+            {
+                foreach (DataRow row in table.Rows)
+                {
+                    //verfuegbarkeit nach nPerson
+                    string newQuery = "SELECT ZimmerNummer FROM zimmer WHERE ZimmerID=@id AND ZimmerTyp >=@AnzahlPerson";//nur passende Zimmer fuer Gaesteanzahl zeigen
+
+                    MySqlParameter[] newparameters = {
+    new MySqlParameter("@id", row["ZimmerID"].ToString()),
+    new MySqlParameter("@AnzahlPerson", nPerson),
+                };
+                    DataTable newTable = dataConnection.LoadFromSQL(newQuery, newparameters);
+                    if (newTable != null)
+                    {
+                        foreach (DataRow newrow in newTable.Rows)
+                        {
+                            zimmerCombobox.Items.Add(newrow["ZimmerNummer"].ToString());
+                        }
+                    }
+                }
+            }
+
+        }
         private void checkinDatetimepicker_ValueChanged(object sender, EventArgs e)
         {
+            CheckZimmerVerfuegbarkeit();
             CalculateNacht();
             CalculatePreis();
         }
         private void checkoutDatetimepicker_ValueChanged(object sender, EventArgs e)
         {
+            CheckZimmerVerfuegbarkeit();
             CalculateNacht();
             CalculatePreis();
         }
         private void CalculateNacht()
         {
             TimeSpan difference = checkoutDatetimepicker.Value.Date - checkinDatetimepicker.Value.Date;
-            nNacht= difference.Days;
+            nNacht = difference.Days;
         }
 
         private void CalculatePreis()
         {
             preis = nNacht * zimmerPreis + nFruestueck * fruestueckPreis;
-            PreisLabel.Text = "Uebernachtung: "+nNacht.ToString()+" * "+zimmerPreis+"\n"
-                +"Fruestueck: "+nFruestueck.ToString()+" * "+fruestueckPreis+"\n"
-                +"Total: "+preis.ToString()+"Euro";
+            PreisLabel.Text = "Uebernachtung: " + nNacht.ToString() + " * " + zimmerPreis + "\n"
+                + "Fruestueck: " + nFruestueck.ToString() + " * " + fruestueckPreis + "\n"
+                + "Total: " + preis.ToString() + "Euro";
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-
+            //hier wird reservierung gespeichert. dafuer muss man zimmerID des gewaehlten zimmers und gastID (egal ob neu/bestand Kunden) wissen. 
 
             //(string zimmerId, string gastID, DateTime checkInDatum, DateTime checkOutDatum, string gastName, string gastEmail,
             ////string gastTelefon, int nPersonen, int nFruehstueck, string isBezahlt, string preis)
 
             //suche nach zimmer id
-            int zimmerid =0;
+            int zimmerid = 0;
             string query = "SELECT ZimmerID FROM zimmer WHERE ZimmerNummer=@zimmerNummer";
             MySqlParameter[] parameters = {
     new MySqlParameter("@zimmerNummer", zimmerCombobox.Text)
 };
-            DataTable table = dataConnection.LoadFromSQL(query,parameters);
+            DataTable table = dataConnection.LoadFromSQL(query, parameters);
             if (table != null && table.Rows.Count > 0)
             {
                 object zimmeridObj = table.Rows[0]["ZimmerID"];
@@ -159,7 +191,7 @@ namespace Hotelbuchungsverwaltung
             }
 
             //suche nach gast id
-            int gastid=0;
+            int gastid = 0;
             string query2 = "SELECT GastID FROM gaeste WHERE Email = @Email";
             MySqlParameter[] parameters2 = {
     new MySqlParameter("@Email", emailTextbox.Text)
@@ -178,9 +210,9 @@ namespace Hotelbuchungsverwaltung
                     MessageBox.Show("Fehler beim Gastsuchen");
                 }
             }
-            string gastname=vornameTextbox.Text+" " +nachnameTextbox.Text;
+            string gastname = vornameTextbox.Text + " " + nachnameTextbox.Text;
             string bezahlt = "y";
-             dataConnection.writeDataReservierung(zimmerid, gastid, checkinDatetimepicker.Value.Date, checkoutDatetimepicker.Value.Date, gastname, emailTextbox.Text, telTextbox.Text, nPerson, nFruestueck, bezahlt, preis.ToString());
+            dataConnection.writeDataReservierung(zimmerid, gastid, checkinDatetimepicker.Value.Date, checkoutDatetimepicker.Value.Date, gastname, emailTextbox.Text, telTextbox.Text, nPerson, nFruestueck, bezahlt, preis.ToString());
         }
 
         private void kundensuchenButton_Click(object sender, EventArgs e)

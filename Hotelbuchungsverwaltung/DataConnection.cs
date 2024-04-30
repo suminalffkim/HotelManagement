@@ -22,6 +22,7 @@ namespace Hotelbuchungsverwaltung
 
         public DataTable LoadFromSQL(string query, MySqlParameter[] parameters = null)
         {
+            //hier kann man mit parametern SQL verwenden
             DataTable table = new DataTable();
 
             using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -52,7 +53,7 @@ namespace Hotelbuchungsverwaltung
             }
         }
 
-       
+
         public void writeDataGast(string vorname, string nachname, string email, string telefon, string adresse)
         {
 
@@ -81,10 +82,11 @@ namespace Hotelbuchungsverwaltung
 
             }
         }
+
         public void writeDataReservierung(int zimmerId, int gastID, DateTime checkInDatum, DateTime checkOutDatum, string gastName, string gastEmail, string gastTelefon, int nPersonen, int nFruehstueck, string bezahlt, string preis)
         {
 
-            string query = "INSERT INTO reservierungen (ZimmerID, GastID, CheckInDatum, CheckOutDatum,GastName,GastEmail,GastTelefon,AnzahlPersonen, FruehstueckInklusive, Bezahlt,Preise)"+
+            string query = "INSERT INTO reservierungen (ZimmerID, GastID, CheckInDatum, CheckOutDatum,GastName,GastEmail,GastTelefon,AnzahlPersonen, FruehstueckInklusive, Bezahlt,Preise)" +
                "VALUES (@ZimmerID, @GastID, @CheckInDatum, @CheckOutDatum,@GastName,@GastEmail,@GastTelefon,@AnzahlPersonen, @FruehstueckInklusive, @Bezahlt,@Preise)";
             using (MySqlConnection connection = new MySqlConnection(connectionString))
             {
@@ -96,11 +98,11 @@ namespace Hotelbuchungsverwaltung
 
                 command.Parameters.AddWithValue("@GastName", gastName);
                 command.Parameters.AddWithValue("@GastEmail", gastEmail);
-               command.Parameters.AddWithValue("@GastTelefon", gastTelefon);
-               command.Parameters.AddWithValue("@AnzahlPersonen", nPersonen);
-                 command.Parameters.AddWithValue("@FruehstueckInklusive", nFruehstueck);
+                command.Parameters.AddWithValue("@GastTelefon", gastTelefon);
+                command.Parameters.AddWithValue("@AnzahlPersonen", nPersonen);
+                command.Parameters.AddWithValue("@FruehstueckInklusive", nFruehstueck);
                 command.Parameters.AddWithValue("@Bezahlt", bezahlt);
-               command.Parameters.AddWithValue("@Preise", preis);
+                command.Parameters.AddWithValue("@Preise", preis);
 
                 try
                 {

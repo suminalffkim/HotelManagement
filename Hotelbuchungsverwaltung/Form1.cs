@@ -17,22 +17,14 @@ namespace Hotelbuchungsverwaltung
         public Form1()
         {
             InitializeComponent();
-            //DataConnection dataConnection=new DataConnection();
 
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // Hier kannst du Initialisierungscode für das Formular platzieren
-            // z.B. Daten laden, Steuerelemente initialisieren, usw.
+
         }
 
-
-
-        private void InitializeComponents()
-        {
-        }
-        
         private void button1_Click(object sender, EventArgs e)
         {
             BookingForm bookingform = new BookingForm();
@@ -43,7 +35,7 @@ namespace Hotelbuchungsverwaltung
         {
 
             BookingManagementForm managementform = new BookingManagementForm();
-           managementform.ShowDialog();
+            managementform.ShowDialog();
         }
 
 
